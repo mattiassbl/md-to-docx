@@ -26,14 +26,21 @@ python md-to-docx.py input.md output.docx --no-show
 ## Appendix: Install Python and Required Packages
 Before running the script, make sure you have saved the provided Python script as `md-to-docx.py`.
 
-### Dependencies
-- python-docx
-- markdown
-- beautifulsoup4
+### Installation Using requirements.txt (Recommended)
+Install all dependencies at once:
 
-### Installation Command
-Run this in your terminal:
+```bash
+pip install -r requirements.txt
+```
+
+### Manual Installation
+Alternatively, install packages individually:
 
 ```bash
 pip install python-docx markdown beautifulsoup4
 ```
+
+### Dependencies
+- python-docx
+- markdown
+- beautifulsoup4
