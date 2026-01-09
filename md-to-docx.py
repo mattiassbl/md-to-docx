@@ -19,6 +19,11 @@ args = parser.parse_args()
 input_md = args.input_md
 output_docx = args.output_docx
 
+# Check if input file exists
+if not os.path.exists(input_md):
+    print(f"Error: Input file '{input_md}' not found.")
+    sys.exit(1)
+
 # Check if output file exists
 if os.path.exists(output_docx):
     response = input(f"{output_docx} already exists. Delete and overwrite? (y/n): ")
@@ -85,6 +90,10 @@ for element in soup.children:
     if isinstance(element, Tag):
         if element.name == "p":
             doc.add_paragraph(element.get_text())
+        elif element.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+            # Add headers with appropriate style
+            level = int(element.name[1])  # Extract number from h1, h2, etc.
+            doc.add_heading(element.get_text(), level=level)
         elif element.name == "pre":
             code_text = element.get_text().rstrip('\n')
             # Create a table with one cell for the code block
@@ -113,6 +122,14 @@ for element in soup.children:
             
             # Add empty paragraph after table for spacing
             doc.add_paragraph()
+        elif element.name == "ul":
+            # Handle unordered lists
+            for li in element.find_all("li", recursive=False):
+                doc.add_paragraph(li.get_text(), style='List Bullet')
+        elif element.name == "ol":
+            # Handle ordered lists
+            for li in element.find_all("li", recursive=False):
+                doc.add_paragraph(li.get_text(), style='List Number')
 
 try:
     doc.save(output_docx)
