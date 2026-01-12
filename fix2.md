@@ -88,6 +88,8 @@ Ensure NiFi can request tokens from Azure AD using Client Credentials Flow.
 
 ## 1.3 Bind the Pool to a Service Account
 
+```bash
+
 PROJECT_NUMBER=$(gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)")
 
 POOL_ID="nifi-external-pool"
@@ -99,6 +101,8 @@ gcloud iam service-accounts add-iam-policy-binding $SA_EMAIL \
 --role="roles/iam.workloadIdentityUser" \
 
 --member="principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL_ID/*"
+
+```
 
 For production, restrict this to specific Azure AD app IDs.
 
