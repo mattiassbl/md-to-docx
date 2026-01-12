@@ -37,12 +37,12 @@ if os.path.exists(output_docx):
         print("Please close the file and try again.")
         sys.exit(1)
 
-# Load Markdown content
+# Load Markdown content, "tables"
 with open(input_md, "r", encoding="utf-8") as f:
     md_content = f.read()
 
 # Convert Markdown to HTML
-html = markdown.markdown(md_content, extensions=["fenced_code"])
+html = markdown.markdown(md_content, extensions=["fenced_code", "tables"])
 
 # Parse HTML
 soup = BeautifulSoup(html, "html.parser")
@@ -130,6 +130,45 @@ for element in soup.children:
             # Handle ordered lists
             for li in element.find_all("li", recursive=False):
                 doc.add_paragraph(li.get_text(), style='List Number')
+        elif element.name == "table":
+            # Handle tables
+            rows = element.find_all("tr")
+            if not rows:
+                continue
+                
+            # Count maximum columns
+            max_cols = 0
+            for row in rows:
+                cols = len(row.find_all(["th", "td"]))
+                max_cols = max(max_cols, cols)
+            
+            if max_cols == 0:
+                continue
+                
+            # Create Word table
+            table = doc.add_table(rows=len(rows), cols=max_cols)
+            
+            # Process each row
+            for row_idx, row in enumerate(rows):
+                cells = row.find_all(["th", "td"])
+                for col_idx, cell in enumerate(cells):
+                    if col_idx < max_cols:
+                        word_cell = table.cell(row_idx, col_idx)
+                        cell_text = cell.get_text().strip()
+                        word_cell.text = cell_text
+                        
+                        # Make header row bold
+                        if row_idx == 0 or cell.name == "th":
+                            # Clear the existing paragraph and add a new bold run
+                            word_cell.paragraphs[0].clear()
+                            run = word_cell.paragraphs[0].add_run(cell_text)
+                            run.font.bold = True
+            
+            # Set table borders
+            set_table_border(table)
+            
+            # Add empty paragraph after table for spacing
+            doc.add_paragraph()
 
 try:
     doc.save(output_docx)
