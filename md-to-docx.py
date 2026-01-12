@@ -5,6 +5,7 @@ import argparse
 import markdown
 from docx import Document
 from docx.shared import Pt, Mm, RGBColor
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from bs4 import BeautifulSoup, Tag
@@ -12,12 +13,18 @@ from bs4 import BeautifulSoup, Tag
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Convert Markdown to Word document')
 parser.add_argument('input_md', help='Input Markdown file')
-parser.add_argument('output_docx', help='Output Word document file')
+parser.add_argument('output_docx', nargs='?', help='Output Word document file (optional, defaults to input name with .docx extension)')
 parser.add_argument('--no-show', action='store_true', help='Do not open the file after creation')
 args = parser.parse_args()
 
 input_md = args.input_md
-output_docx = args.output_docx
+
+# If output file not specified, use input filename with .docx extension
+if args.output_docx:
+    output_docx = args.output_docx
+else:
+    base_name = os.path.splitext(input_md)[0]
+    output_docx = f"{base_name}.docx"
 
 # Check if input file exists
 if not os.path.exists(input_md):
@@ -37,9 +44,43 @@ if os.path.exists(output_docx):
         print("Please close the file and try again.")
         sys.exit(1)
 
-# Load Markdown content, "tables"
+# Load Markdown content
 with open(input_md, "r", encoding="utf-8") as f:
     md_content = f.read()
+
+# Fix markdown tables with blank lines between rows
+def fix_markdown_tables(content):
+    """Remove blank lines between table rows to ensure proper parsing"""
+    import re
+    
+    lines = content.split('\n')
+    result = []
+    in_table = False
+    
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        
+        # Detect table start (line with pipes)
+        if '|' in stripped and stripped.count('|') >= 2:
+            # Check if this is a separator line (---)
+            is_separator = bool(re.match(r'^[\s\-:|]+$', stripped.replace('|', '')))
+            
+            # Check if previous line was also table content
+            if i > 0 and in_table and not result[-1].strip():
+                # Remove blank line before table row
+                result.pop()
+            
+            in_table = True
+            result.append(line)
+        else:
+            # Not a table line
+            if stripped:  # Non-empty line
+                in_table = False
+            result.append(line)
+    
+    return '\n'.join(result)
+
+md_content = fix_markdown_tables(md_content)
 
 # Convert Markdown to HTML
 html = markdown.markdown(md_content, extensions=["fenced_code", "tables"])
@@ -110,7 +151,8 @@ def set_cell_border(cell, borders):
     
     tcPr.append(tcBorders)
 
-for element in soup.children:
+# Process all elements (use find_all to get all elements at any level)
+for element in soup.find_all(recursive=False):
     if isinstance(element, Tag):
         if element.name == "p":
             doc.add_paragraph(element.get_text())
@@ -119,7 +161,7 @@ for element in soup.children:
             level = int(element.name[1])  # Extract number from h1, h2, etc.
             doc.add_heading(element.get_text(), level=level)
         elif element.name == "pre":
-            code_text = element.get_text().rstrip('\n')
+            code_text = element.get_text().strip()
             # Create a table with one cell for the code block
             table = doc.add_table(rows=1, cols=1)
             cell = table.cell(0, 0)
@@ -194,6 +236,9 @@ for element in soup.children:
                             run.font.bold = True
                             run.font.size = Pt(10)
                             run.font.name = 'Calibri'
+                            
+                            # Set bottom alignment for header cells
+                            word_cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.BOTTOM
                             
                             # Header row borders: no borders except bottom
                             set_cell_border(word_cell, {
