@@ -50,6 +50,11 @@ soup = BeautifulSoup(html, "html.parser")
 # Create Word document
 doc = Document()
 
+# Set default font to Calibri
+style = doc.styles['Normal']
+font = style.font
+font.name = 'Calibri'
+
 def set_cell_background(cell, color):
     """Set cell background color"""
     shading_elm = OxmlElement('w:shd')
@@ -85,6 +90,25 @@ def set_table_border(table):
         border.set(qn('w:space'), '0')
         tblBorders.append(border)
     tblPr.append(tblBorders)
+
+def set_cell_border(cell, borders):
+    """Set specific borders for a cell"""
+    tc = cell._element
+    tcPr = tc.get_or_add_tcPr()
+    tcBorders = OxmlElement('w:tcBorders')
+    
+    for border_name, include in borders.items():
+        border = OxmlElement(f'w:{border_name}')
+        if include:
+            border.set(qn('w:val'), 'single')
+            border.set(qn('w:sz'), '8')  # 1pt
+            border.set(qn('w:color'), '000000')
+        else:
+            border.set(qn('w:val'), 'nil')
+        border.set(qn('w:space'), '0')
+        tcBorders.append(border)
+    
+    tcPr.append(tcBorders)
 
 for element in soup.children:
     if isinstance(element, Tag):
@@ -155,17 +179,42 @@ for element in soup.children:
                     if col_idx < max_cols:
                         word_cell = table.cell(row_idx, col_idx)
                         cell_text = cell.get_text().strip()
-                        word_cell.text = cell_text
                         
-                        # Make header row bold
+                        # Clear paragraph and set up formatting
+                        paragraph = word_cell.paragraphs[0]
+                        paragraph.clear()
+                        
+                        # Set 0pt spacing after paragraph
+                        paragraph.paragraph_format.space_after = Pt(0)
+                        
+                        # Handle header row (first row or th elements)
                         if row_idx == 0 or cell.name == "th":
-                            # Clear the existing paragraph and add a new bold run
-                            word_cell.paragraphs[0].clear()
-                            run = word_cell.paragraphs[0].add_run(cell_text)
+                            # Header formatting: uppercase, bold, 10pt
+                            run = paragraph.add_run(cell_text.upper())
                             run.font.bold = True
-            
-            # Set table borders
-            set_table_border(table)
+                            run.font.size = Pt(10)
+                            run.font.name = 'Calibri'
+                            
+                            # Header row borders: no borders except bottom
+                            set_cell_border(word_cell, {
+                                'top': False,
+                                'left': False,
+                                'bottom': True,
+                                'right': False
+                            })
+                        else:
+                            # Data row formatting
+                            run = paragraph.add_run(cell_text)
+                            run.font.name = 'Calibri'
+                            
+                            # Data row borders: top, left, right, bottom for data rows
+                            borders = {
+                                'top': row_idx == 1,  # Only first data row gets top border
+                                'left': True,
+                                'bottom': True,
+                                'right': True
+                            }
+                            set_cell_border(word_cell, borders)
             
             # Add empty paragraph after table for spacing
             doc.add_paragraph()
