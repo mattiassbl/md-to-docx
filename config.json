@@ -1,0 +1,69 @@
+{
+  "headings": {
+    "h1": {
+      "font_name": "Aptos Display",
+      "font_size": 20,
+      "bold": false,
+      "italic": false,
+      "color": "2E75B6",
+      "space_before": 18,
+      "space_after": 4
+    },
+    "h2": {
+      "font_name": "Aptos Display",
+      "font_size": 17,
+      "bold": false,
+      "italic": false,
+      "color": "000000",
+      "space_before": 10,
+      "space_after": 4
+    },
+    "h3": {
+      "font_name": "Aptos Display",
+      "false": 15,
+      "bold": true,
+      "italic": false,
+      "color": "000000",
+      "space_before": 8,
+      "space_after": 3
+    },
+    "h4": {
+      "font_name": "Aptos Display",
+      "font_size": 13,
+      "bold": false,
+      "italic": true,
+      "color": "000000",
+      "space_before": 6,
+      "space_after": 2
+    }
+  },
+  "codeblock": {
+    "font_name": "Courier New",
+    "font_size": 11,
+    "background_color": "F2F2F2",
+    "cell_margin": 3,
+    "line_spacing": 1.0
+  },
+  "paragraph": {
+    "font_name": "Calibri",
+    "font_size": 11,
+    "bold": false,
+    "italic": false,
+    "color": "000000",
+    "space_before": 0,
+    "space_after": 8,
+    "line_spacing": 1.15
+  },
+  "table": {
+    "header": {
+      "font_name": "Calibri",
+      "font_size": 10,
+      "bold": true,
+      "uppercase": true,
+      "vertical_alignment": "bottom"
+    },
+    "data": {
+      "font_name": "Calibri"
+    }
+  }
+}
